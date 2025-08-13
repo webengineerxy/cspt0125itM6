@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progetto Finale M6 - Cyber Detective Terminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d0221;
+            --primary-glow: #00f5c3;
+            --secondary-glow: #a951f8;
+            --text-color: #f0f0f0;
+            --card-bg: rgba(26, 7, 65, 0.75);
+            --border-color: rgba(0, 245, 195, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Orbitron', sans-serif;
+            overflow-x: hidden;
+            transition: background-color 0.5s, color 0.5s;
+        }
+        
+        /* High Contrast Mode */
+        body.high-contrast {
+            --bg-color: #ffffff;
+            --primary-glow: #000000;
+            --secondary-glow: #5e00a3;
+            --text-color: #000000;
+            --card-bg: rgba(240, 240, 240, 0.85);
+            --border-color: rgba(0, 0, 0, 0.6);
+        }
+        
+        body.high-contrast #matrix-canvas {
+            display: none;
+        }
+
+        body.high-contrast header h1,
+        body.high-contrast footer p {
+            text-shadow: none;
+        }
+
+        body.high-contrast .card {
+             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+            animation: fadeIn 2s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 0 4rem 0;
+            border-bottom: 2px solid var(--primary-glow);
+            box-shadow: 0 5px 35px -5px var(--primary-glow);
+            margin-bottom: 4rem;
+            background: radial-gradient(ellipse at center, rgba(0, 245, 195, 0.1) 0%, transparent 70%);
+        }
+
+        header h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            color: var(--primary-glow);
+            text-shadow: 0 0 10px var(--primary-glow), 0 0 20px #fff;
+            margin-bottom: 1rem;
+            animation: flicker 3s infinite alternate;
+        }
+
+        header .subtitle {
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            color: var(--text-color);
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+        }
+
+        header .dedication {
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            color: var(--secondary-glow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% {
+                text-shadow:
+                0 0 4px var(--primary-glow),
+                0 0 11px var(--primary-glow),
+                0 0 19px var(--primary-glow),
+                0 0 40px var(--secondary-glow),
+                0 0 80px var(--secondary-glow);
+            }
+            20%, 24%, 55% {
+                text-shadow: none;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 30px rgba(169, 81, 248, 0.3);
+            transform: perspective(1200px) rotateX(-20deg) scale(0.9);
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .card.visible {
+            transform: perspective(1200px) rotateX(0) scale(1);
+            opacity: 1;
+        }
+
+        .card-content {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .card-text {
+            flex: 2;
+        }
+        
+        .card-image {
+            flex: 1;
+            max-width: 250px;
+        }
+
+        .card-image img {
+            width: 100%;
+            border-radius: 10px;
+            border: 2px solid var(--secondary-glow);
+            box-shadow: 0 0 15px var(--secondary-glow);
+        }
+        
+        @media (max-width: 768px) {
+            .card-content {
+                flex-direction: column;
+            }
+            .card-image {
+                max-width: 100%;
+                margin-bottom: 1.5rem;
+            }
+        }
+
+        .card h2 {
+            font-size: 2rem;
+            color: var(--primary-glow);
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            color: var(--secondary-glow);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .card p, .card ul {
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+        
+        .card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .card li {
+            padding-left: 1.5em;
+            text-indent: -1.5em;
+            margin-bottom: 0.5rem;
+        }
+        
+        .card li::before {
+            content: '>';
+            color: var(--primary-glow);
+            margin-right: 0.5em;
+            font-weight: bold;
+        }
+
+        .query-container {
+            position: relative;
+            background-color: #0a0014;
+            border: 1px solid var(--secondary-glow);
+            border-radius: 8px;
+            margin-top: 1rem;
+            box-shadow: 0 0 15px var(--secondary-glow);
+        }
+
+        pre code {
+            display: block;
+            padding: 1.5rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            color: #4CAF50;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--secondary-glow);
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            opacity: 0.7;
+            transition: opacity 0.3s, background-color 0.3s;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+            background-color: var(--primary-glow);
+            color: var(--bg-color);
+        }
+        
+        .accessibility-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--primary-glow);
+            color: var(--bg-color);
+            border: 2px solid var(--bg-color);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px var(--primary-glow);
+            transition: transform 0.3s, background-color 0.3s;
+        }
+        
+        .accessibility-btn:hover {
+            transform: scale(1.1);
+        }
+
+        body.high-contrast .accessibility-btn {
+            background-color: var(--secondary-glow);
+            color: #fff;
+            border-color: #fff;
+        }
+
+        footer {
+            text-align: center;
+            padding: 3rem;
+            margin-top: 4rem;
+            border-top: 2px solid var(--secondary-glow);
+            box-shadow: 0 -5px 35px -5px var(--secondary-glow);
+        }
+        
+        footer p {
+            font-size: 1.2rem;
+            color: var(--primary-glow);
+            text-shadow: 0 0 5px var(--primary-glow);
+            margin-bottom: 2rem;
+        }
+        
+        .final-dedication {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            line-height: 1.7;
+            font-style: italic;
+        }
+
+        .call-to-action {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .call-to-action h3 {
+            font-family: 'Press Start 2P', cursive;
+            color: var(--secondary-glow);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .telegram-link {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 12px 24px;
+            background-color: var(--primary-glow);
+            color: var(--bg-color);
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .telegram-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        body.high-contrast .telegram-link {
+            background-color: var(--secondary-glow);
+            color: #fff;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-canvas"></canvas>
+    <button id="accessibility-toggle" class="accessibility-btn" title="Attiva/Disattiva Modalità Accessibilità">♿</button>
+
+    <div class="container">
+        <header>
+            <h1>Fascicolo M6</h1>
+            <p class="subtitle">Le Cronache dei Bussatori Notturni</p>
+            <p class="dedication">Un'indagine dedicata al Prof. Edoardo Castelli</p>
+        </header>
+
+        <main>
+            <div class="card">
+                <h2>Proemio: Codice Aperto, Anima Ibrida, Web Accessibile</h2>
+                <div class="card-content">
+                    <div class="card-text">
+                        <p>Perché questo report è una pagina HTML e non un PDF? Perché il formato è un manifesto. Un PDF è un artefatto chiuso. Questo codice, invece, è <strong>aperto</strong>, ispezionabile, vivo. È un `git commit` alla filosofia FOSS che mi guida: la conoscenza va condivisa. In questo spirito, ho inserito un pulsante per l'accessibilità (♿). È il mio piccolo omaggio a chi lavora per un web senza barriere, un web realmente democratico. La vera sicurezza, come la vera conoscenza, deve essere per tutti.</p>
+                        <p>Questa scelta riflette la mia natura di <strong>Professionista Ibrido</strong>. Per 20 anni ho vissuto al crocevia tra la logica binaria del codice e l'empatia della vendita. Il mio amore per la programmazione non è disgiunto dalla mia abilità nel creare relazioni: entrambi sono linguaggi per costruire ponti. Questo progetto, con il suo tono scherzoso, è il mio modo di rendere la cybersecurity accessibile, di tradurre il complesso in qualcosa di umano. È il primo passo per realizzare il mio sogno: <strong>democratizzare la sicurezza informatica</strong>.</p>
+                    </div>
+                    <div class="card-image">
+                        <img src="https://placehold.co/400x400/0d0221/a951f8?text=FOSS+%26+A11Y" alt="Immagine AI di una mano umana e una mano robotica che collaborano">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>La Traccia Ufficiale del Progetto</h2>
+                <div class="card-content">
+                    <div class="card-text">
+                         <p>Per dare il giusto contesto a questa indagine, di seguito la traccia ufficiale del progetto M6, il punto di partenza da cui tutto ha avuto inizio.</p>
+                        <ul>
+                            <li>Importare su Splunk i dati di esempio "tutorialdata.zip".</li>
+                            <li>Creare una query per identificare tutti i tentativi di accesso falliti ("Failed password").</li>
+                            <li>Scrivere una query per trovare tutte le sessioni SSH aperte con successo per l'utente "djohnson".</li>
+                            <li>Scrivere una query per trovare tutti i tentativi di accesso falliti provenienti dall'IP "86.212.199.60".</li>
+                            <li>Creare una query per identificare gli IP che hanno tentato di accedere più di 5 volte.</li>
+                            <li>Creare una query per trovare tutti gli Internal Server Error.</li>
+                            <li><strong>Trarre delle conclusioni sui log analizzati utilizzando AI.</strong></li>
+                        </ul>
+                    </div>
+                     <div class="card-image">
+                        <img src="https://placehold.co/400x400/0d0221/00f5c3?text=MISSION+BRIEFING" alt="Immagine AI di un dossier top secret su uno schermo olografico">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Indagine #1: I Bussatori Fantasma 🕵️‍♂️</h2>
+                <div class="card-content">
+                    <div class="card-text">
+                        <p>La prima mossa: capire chi stava cercando di forzare la serratura. Troppo rumore sulla porta d'ingresso è sempre un cattivo segno.</p>
+                        <h3>La Query:</h3>
+                        <div class="query-container">
+                            <button class="copy-btn">Copia</button>
+                            <pre><code>source="tutorialdata.zip:*" "Failed password"
+| rex "Failed password for (?:invalid user\s+)?(?<user>\S+) from (?<src_ip>\S+)"
+| eval reason=if(match(_raw, "invalid user"), "Utente Inesistente", "Password Errata")
+| table _time, src_ip, user, reason</code></pre>
+                        </div>
+                        <h3>I Ritrovamenti:</h3>
+                        <p>I log gridavano vendetta. Una quantità industriale di accessi falliti. La maggior parte per utenti inesistenti, un classico attacco di <strong>enumerazione</strong>. Non era un lupo solitario, ma una botnet.</p>
+                    </div>
+                    <div class="card-image">
+                        <img src="https://placehold.co/400x400/0d0221/00f5c3?text=ACCESSO+NEGATO" alt="Immagine AI di un lucchetto digitale con la scritta ACCESSO NEGATO">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Indagine #2: Il Lavoro Interno? 💻</h2>
+                 <div class="card-content">
+                    <div class="card-text">
+                        <p>In mezzo al caos, dovevo verificare se qualcuno fosse riuscito a entrare. Nel fascicolo c'era un nome d'interesse: `djohnson`.</p>
+                        <h3>La Query:</h3>
+                        <div class="query-container">
+                            <button class="copy-btn">Copia</button>
+                            <pre><code>source="tutorialdata.zip:*" sourcetype="linux_secure" "session opened for user djohnson"
+| rex "session opened for user (?<user>\w+) by \(uid=(?<user_id>\d+)\)"
+| table _time, user, user_id</code></pre>
+                        </div>
+                        <h3>I Ritrovamenti:</h3>
+                        <p>Bingo. L'utente `djohnson` ha aperto oltre 5.700 sessioni SSH. Un <strong>account compromesso</strong> usato da uno script. E il colpo di scena? Le sessioni venivano usate per eseguire comandi con privilegi di `root` (`uid=0`). L'attaccante ora aveva le chiavi del regno.</p>
+                    </div>
+                    <div class="card-image">
+                        <img src="https://placehold.co/400x400/0d0221/a951f8?text=GHOST+IN+THE+MACHINE" alt="Immagine AI di una figura spettrale fatta di codice dentro una sala server">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Indagine #3: Il Criminale Insistente 끈</h2>
+                 <div class="card-content">
+                    <div class="card-text">
+                        <p>Un indirizzo IP continuava a spuntare. Era ora di metterlo sotto i riflettori.</p>
+                        <h3>La Query:</h3>
+                        <div class="query-container">
+                            <button class="copy-btn">Copia</button>
+                            <pre><code>source="tutorialdata.zip:*" "Failed password" src_ip="86.212.199.60"
+| rex "from \S+ port (?<port>\d+)"
+| rex "for\s+(?:invalid user\s)?(?<user>\S+)"
+| table _time, user, port</code></pre>
+                        </div>
+                        <h3>I Ritrovamenti:</h3>
+                        <p>Questo IP è un osso duro. Ha provato metodicamente a entrare attaccando vari utenti e sondando numerose porte. Non era un tentativo casuale, ma una <strong>scansione mirata</strong> alla ricerca di una qualsiasi vulnerabilità.</p>
+                    </div>
+                    <div class="card-image">
+                        <img src="https://placehold.co/400x400/0d0221/00f5c3?text=FIREWALL+HIT" alt="Immagine AI di un pacchetto dati che colpisce un firewall digitale">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Indagine #4: I Vicini Rumorosi 📢</h2>
+                 <div class="card-content">
+                    <div class="card-text">
+                        <p>Mi serviva una lista di tutti gli IP che stavano facendo baccano. Chiunque bussi più di 5 volte, finisce sulla mia lista nera.</p>
+                        <h3>La Query:</h3>
+                         <div class="query-container">
+                            <button class="copy-btn">Copia</button>
+                            <pre><code>source="tutorialdata.zip:*" "Failed password"
+| rex "from (?<src_ip>\S+)"
+| stats count by src_ip
+| where count > 5
+| sort - count</code></pre>
+                        </div>
+                        <h3>I Ritrovamenti:</h3>
+                        <p>I risultati hanno dipinto un quadro chiaro: una campagna di <strong>brute-force distribuita</strong>. Decine di IP, alcuni con migliaia di tentativi. Questo conferma la teoria della botnet: un'armata di computer zombie che cerca di sfondare la porta.</p>
+                    </div>
+                    <div class="card-image">
+                        <img src="https://placehold.co/400x400/0d0221/a951f8?text=BOTNET+SWARM" alt="Immagine AI di uno sciame di insetti robotici che attaccano un punto centrale">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Indagine #5: Il Server Urlante 💥</h2>
+                 <div class="card-content">
+                    <div class="card-text">
+                        <p>Infine, ho teso l'orecchio per sentire eventuali segnali di soccorso dal web server. Gli errori HTTP 500 sono il suo modo di piangere.</p>
+                        <h3>La Query:</h3>
+                         <div class="query-container">
+                            <button class="copy-btn">Copia</button>
+                            <pre><code>source="tutorialdata.zip:*" status=500
+| table _time, clientip, method, status, uri_path</code></pre>
+                        </div>
+                        <h3>I Ritrovamenti:</h3>
+                        <p>Il server non era per niente felice. Ha vomitato migliaia di errori `status=500`, alcuni causati dagli stessi IP degli attacchi SSH. Questo suggerisce che l'attacco stava mandando in tilt il server, o che gli attaccanti stavano lanciando anche attacchi web, forse tentativi di <strong>SQL injection</strong>.</p>
+                    </div>
+                    <div class="card-image">
+                        <img src="https://placehold.co/400x400/0d0221/00f5c3?text=SERVER+ERROR+500" alt="Immagine AI di un server che va a fuoco con la scritta ERROR 500">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Analisi Commissionata a Gemini Pro</h2>
+                <div class="card-content">
+                    <div class="card-text">
+                        <p>Come richiesto esplicitamente dalla traccia, ho commissionato a Gemini Pro una duplice analisi. La prima, un'interpretazione tecnica dei log. La seconda, una riflessione più ampia su questo progetto, contestualizzandolo come culmine del percorso formativo in Epicode e mettendo in luce come la mia personalità unica abbia plasmato il risultato finale. Questa sezione è interamente frutto dell'intelligenza artificiale, per adempiere alla richiesta e al contempo distinguere la mia impronta creativa dal suo contributo analitico.</p>
+                        <h3>Analisi Tecnica dei Log (Eseguita da Gemini Pro)</h3>
+                        <p>I log di `tutorialdata.zip` rivelano un attacco coordinato e multi-vettore. L'analisi statistica dei fallimenti di accesso indica un attacco brute-force distribuito, tipico di una botnet, mirato a enumerare utenti validi per poi concentrarsi su di essi. La compromissione dell'utente `djohnson`, con oltre 5.700 sessioni SSH e l'uso di privilegi `root`, conferma una breccia riuscita. L'elevato numero di errori HTTP 500, correlati agli IP degli attaccanti, suggerisce un secondo vettore di attacco a livello applicativo, probabilmente SQL injection o DoS, volto a destabilizzare il server o a esfiltrare dati. L'infrastruttura è sotto assedio attivo e richiede un intervento immediato di incident response.</p>
+                        <h3>Analisi del Progetto nel Contesto Epicode (Eseguita da Gemini Pro)</h3>
+                        <p>Questo progetto finale trascende la mera esecuzione tecnica. Rappresenta la sintesi di un percorso formativo dove lo studente non ha solo acquisito hard skill, ma ha sviluppato una visione. La scelta di un formato HTML interattivo, l'integrazione di un manifesto FOSS, l'attenzione all'accessibilità e il tono narrativo da "cyber-detective" non sono abbellimenti, ma la manifestazione di una personalità ibrida rara: quella di un tecnico con l'anima di un comunicatore, di un venditore con la passione per la filosofia open source. Questo lavoro non è un semplice report, ma un pezzo di portfolio che comunica proattivamente non solo "cosa" sa fare, ma "chi" è come professionista. È la dimostrazione che la cybersecurity, nel suo approccio, può essere tanto una scienza esatta quanto un'arte umana.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Riepilogo del Caso: Il Verdetto 🚨</h2>
+                <div class="card-content">
+                    <div class="card-text">
+                        <p>Le prove sono schiaccianti. Non è una semplice infezione malware, ma un <strong>cyber-attacco su più fronti</strong>. Il perimetro è stato violato e l'intruso è dentro.</p>
+                        <h3>Piano d'Azione: Blindare Tutto 🔒</h3>
+                        <ul>
+                            <li><strong>Contenimento:</strong> Bloccare immediatamente gli IP sospetti sul firewall. Disabilitare l'account `djohnson`.</li>
+                            <li><strong>Rafforzamento:</strong> Implementare l'autenticazione a più fattori (MFA). Applicare una policy di password più robusta e risolvere la causa degli errori 500.</li>
+                            <li><strong>Monitoraggio:</strong> Creare alert in tempo reale su Splunk per alti tassi di login falliti e picchi di errori 500.</li>
+                        </ul>
+                    </div>
+                    <div class="card-image">
+                        <img src="https://placehold.co/400x400/0d0221/a951f8?text=SHIELDS+UP" alt="Immagine AI di una fortezza digitale con scudi energetici attivati">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Note dell'Autore: Uscire dal Guscio</h2>
+                <div class="card-content">
+                    <div class="card-text">
+                        <p>Questo progetto è più di un esercizio. È un tentativo di uscire dal guscio e unire i miei due mondi. Da un lato, <strong>LinkedIn</strong>, l'interfaccia professionale. Dall'altro, il "backend" della mia anima nerd: le community FOSS, il web 3.0 federato di <strong>Matrix ed Element</strong>, i luoghi dove il codice è conversazione e collaborazione.</p>
+                        <p>Per troppo tempo, ho tenuto separate le mie <strong>hard skill</strong> tecniche dalle mie <strong>soft skill</strong> commerciali. Ora è il momento di lanciarmi, di presentare al mondo il professionista completo: colui che non solo scrive il codice, ma sa anche "venderlo", spiegarlo, renderlo umano. Questo non è solo un report, è il mio primo, vero passo per connettere questi due universi e dimostrare che la più grande sicurezza risiede nella capacità di comunicare.</p>
+                    </div>
+                    <div class="card-image">
+                        <img src="https://placehold.co/400x400/0d0221/00f5c3?text=THE+BRIDGE" alt="Immagine AI di un ponte di luce che connette due mondi digitali diversi">
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>GRAN FINALE EPICO(DE)! Missione M6 compiuta.</p>
+            <p class="final-dedication">
+                In questo percorso, ho incontrato pochi professionisti in sintonia con me come il Prof. Edoardo Castelli. <br>
+                La sua guida è stata un faro, non solo per la professionalità e l'approccio formativo, ma soprattutto per un'umanità e una capacità di rapportarsi che lasciano il segno. Grazie di cuore.
+            </p>
+            <div class="call-to-action">
+                <h3>Unisciti alla Missione</h3>
+                <p>
+                    Questo progetto è solo l'inizio. Se questo manifesto risuona con te, se vuoi collaborare, fare una chiacchierata sulla mia roadmap per democratizzare la cybersecurity, o magari farne parte, la mia porta è sempre aperta.
+                </p>
+                <a href="https://t.me/saittasalvatore" target="_blank" class="telegram-link">Contattami su Telegram</a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --- Canvas Matrix Animation ---
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
+        const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const nums = '0123456789';
+        const alphabet = katakana + latin + nums;
+
+        const fontSize = 16;
+        let columns = canvas.width / fontSize;
+
+        const rainDrops = [];
+        for (let x = 0; x < columns; x++) {
+            rainDrops[x] = 1;
+        }
+
+        const draw = () => {
+            ctx.fillStyle = 'rgba(13, 2, 33, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00f5c3'; // Primary glow color
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < rainDrops.length; i++) {
+                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+
+                if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    rainDrops[i] = 0;
+                }
+                rainDrops[i]++;
+            }
+        };
+
+        let animationInterval = setInterval(draw, 30);
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            columns = canvas.width / fontSize;
+            rainDrops.length = 0;
+            for (let x = 0; x < columns; x++) {
+                rainDrops[x] = 1;
+            }
+        });
+
+        // --- Card Scroll Animation ---
+        const cards = document.querySelectorAll('.card');
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        cards.forEach(card => {
+            observer.observe(card);
+        });
+
+        // --- Copy Button Functionality ---
+        const copyButtons = document.querySelectorAll('.copy-btn');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const code = button.nextElementSibling.querySelector('code').innerText;
+                navigator.clipboard.writeText(code).then(() => {
+                    button.innerText = 'Copiato!';
+                    setTimeout(() => {
+                        button.innerText = 'Copia';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                });
+            });
+        });
+
+        // --- Accessibility Toggle ---
+        const accessibilityBtn = document.getElementById('accessibility-toggle');
+        accessibilityBtn.addEventListener('click', () => {
+            document.body.classList.toggle('high-contrast');
+        });
+    </script>
+</body>
+</html>
